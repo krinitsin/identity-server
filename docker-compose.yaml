@@ -1,0 +1,38 @@
+version: '2'
+
+networks:
+  bridge:
+    driver: bridge
+services:
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: identity
+      POSTGRES_PASSWORD: identitypass
+      POSTGRES_DB: identity
+      SSL_MODE: disable
+      PGDATA: /data/postgres
+    volumes:
+      - ./migrations/20220120183905_init.up.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+    networks:
+      - bridge
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    container_name: identity
+    depends_on:
+      - postgres
+    links:
+      - postgres
+    ports:
+      - 8080:8080
+    command: /release/app/bin/identity --port 8080 --host 0.0.0.0 --db.username="identity" --db.password="identitypass" --db.dbname="identity"  --db.host="postgres" --db.port=5432
+    networks:
+      - bridge
+volumes:
+  postgres:

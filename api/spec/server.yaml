@@ -1,0 +1,202 @@
+---
+swagger: "2.0"
+info:
+  description: |
+    #### API for identity management"
+  title: "Identity API"
+  version: "1.0.0"
+  contact:
+    email: "krinitsinv@gmail.com"
+host: "localhost:8080"
+basePath: "/api/v1"
+tags:
+  - name: "public"
+    description: "Publicly available path"
+  - name: "private"
+    description: "Private path with authorization layer"
+schemes:
+  - http
+securityDefinitions:
+  basicAuth:
+    type: basic
+paths:
+  /public/registration:
+    post:
+      tags:
+        - public
+      description: Register new account
+      operationId: registration
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        201:
+          description: User created
+        409:
+          description: Username already exists
+          schema:
+            $ref: '#/definitions/error'
+        default:
+          "$ref": "#/responses/InternalServerErrorResponse"
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/RegistrationRequest'
+  /private/identity:
+    get:
+      tags:
+        - private
+      description: View identity after it was seted
+      operationId: getPrivateIdentity
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        200:
+          description: View private Identity
+          schema:
+            "$ref": "#/definitions/IdentityResponse"
+        401:
+          $ref: '#/responses/UnauthorizedError'
+        412:
+          "$ref": "#/responses/IdentityIsNotSetError"
+        default:
+          "$ref": "#/responses/InternalServerErrorResponse"
+      security:
+        - basicAuth: [ ]
+    post:
+      tags:
+        - private
+      description: Set identity after registration
+      operationId: setIdentity
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Identity assigned
+        401:
+          $ref: '#/responses/UnauthorizedError'
+        409:
+          description: Ethereum address is already assigned to another identity
+          schema:
+            $ref: '#/definitions/error'
+        default:
+          "$ref": "#/responses/InternalServerErrorResponse"
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SetIdentityRequest'
+      security:
+        - basicAuth: [ ]
+  /public/country/{address}:
+    get:
+      tags:
+        - public
+      description: Get country assigned to Etherium address
+      operationId: getPublicCountry
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Country for Etherium address
+          schema:
+            "$ref": "#/definitions/CountryResponse"
+        400:
+          description: Etherium address is invalid
+          schema:
+            "$ref": "#/definitions/error"
+        default:
+          "$ref": "#/responses/InternalServerErrorResponse"
+      parameters:
+        - in: path
+          name: address
+          required: true
+          type: string
+          minLength: 42
+responses:
+  UnauthorizedError:
+    description: Authentication information is missing or invalid
+    headers:
+      WWW_Authenticate:
+        type: string
+  InternalServerErrorResponse:
+    description: Internal server error
+    schema:
+      $ref: '#/definitions/error'
+  IdentityIsNotSetError:
+    description: Identity is not set
+    schema:
+      $ref: '#/definitions/error'
+definitions:
+  RegistrationRequest:
+    type: object
+    required:
+      - username
+      - password
+    properties:
+      username:
+        type: string
+        minLength: 8
+        title: Username
+      password:
+        type: string
+        minLength: 8
+        title: Password
+  SetIdentityRequest:
+    type: object
+    required:
+      - eth_address
+      - country
+    properties:
+      eth_address:
+        type: string
+        minLength: 8
+        title: Etherium address
+      country:
+        type: string
+        minLength: 2
+        title: Country
+  CountryResponse:
+    type: object
+    properties:
+      Country:
+        type: string
+        title: Country
+  IdentityResponse:
+    type: object
+    properties:
+      Username:
+        type: string
+        title: Username
+      eth_address:
+        type: string
+        title: Etherium address
+      Country:
+        type: string
+        title: Country
+  error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int64
+      message:
+        type: string
+  principal:
+    type: object
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+

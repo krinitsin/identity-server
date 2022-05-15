@@ -6,7 +6,7 @@ import (
 	"identityserver/internal/server/restapi/operations/private"
 	"identityserver/internal/server/restapi/operations/public"
 	"identityserver/pkg/models/rest"
-	"identityserver/pkg/repos/identity"
+	"identityserver/pkg/repos"
 	"identityserver/pkg/services"
 	"identityserver/pkg/utils/helpers"
 	"net/http"
@@ -41,9 +41,14 @@ func (i identityController) GetPrivateIdentity(params private.GetPrivateIdentity
 		})
 	}
 
+	var ethAddr string
+	if len(id.EthAddress) != 0 {
+		ethAddr = "0x" + hex.EncodeToString(id.EthAddress)
+	}
+
 	return private.NewGetPrivateIdentityOK().WithPayload(&rest.IdentityResponse{
 		Country:    id.Country,
-		EthAddress: "0x" + hex.EncodeToString(id.EthAddress),
+		EthAddress: ethAddr,
 		Username:   id.Username,
 	})
 }
@@ -72,7 +77,7 @@ func (i identityController) GetCountry(params public.GetPublicCountryParams) mid
 
 func (i identityController) Registration(params public.RegistrationParams) middleware.Responder {
 	_, err := i.service.Create(params.HTTPRequest.Context(), *params.Body.Username, *params.Body.Password)
-	if errors.Is(err, identity.ErrAlreadyExist) {
+	if errors.Is(err, repos.ErrAlreadyExist) {
 		return public.NewRegistrationConflict().WithPayload(&rest.Error{
 			Code:    409,
 			Message: "username already taken",

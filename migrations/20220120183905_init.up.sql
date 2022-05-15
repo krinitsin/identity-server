@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS identity
     id         UUID PRIMARY KEY                                   NOT NULL,
     username   text                                               NOT NULL,
     pass_hash   text                                               NOT NULL,
-    eth_address text,
+    eth_address bytea,
     country    text,
     state      text                                               NOT NULL,
 

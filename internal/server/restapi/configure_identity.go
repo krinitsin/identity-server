@@ -8,7 +8,6 @@ import (
 	"identityserver/internal/server/auth"
 	"identityserver/internal/server/handlers"
 	"identityserver/pkg/repos"
-	"identityserver/pkg/repos/identity"
 	"identityserver/pkg/services"
 	"identityserver/pkg/utils"
 	"net/http"
@@ -61,7 +60,7 @@ func configureAPI(api *operations.IdentityAPI) http.Handler {
 		logger.Fatal("db init error", zap.Error(err))
 	}
 
-	repo := identity.NewIdentityRepo(conn)
+	repo := repos.NewIdentityRepo(conn)
 
 	tSvc := utils.NewTimeService()
 

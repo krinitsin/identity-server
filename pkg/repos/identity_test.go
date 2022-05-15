@@ -1,4 +1,4 @@
-package identity
+package repos
 
 import (
 	"context"
@@ -6,14 +6,12 @@ import (
 
 	"identityserver/pkg/models/orm"
 	testutils "identityserver/pkg/test_utils"
-	mock_utils "identityserver/pkg/test_utils/mocks/utils"
 	"identityserver/pkg/utils"
 	"strings"
 	"testing"
 
 	"github.com/gofrs/uuid"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,23 +21,19 @@ func TestIdentityRepo(t *testing.T) {
 	db := testutils.NewDbTestSetUp(
 		t,
 		testutils.WithSchemaFiles(
-			"../../test_utils/fixtures/migrations/identity.sql",
+			"../../migrations/20220120183905_init.up.sql",
 		),
 		testutils.WithFixtureFiles(
-			"../../test_utils/fixtures/repos/identity/identity.yml",
+			"../test_utils/fixtures/repos/identity/identity.yml",
 		),
 	)
 	defer db.TearDown()
 
 	ctx := context.Background()
 
-	mockCtrl := gomock.NewController(t)
-	tServiceMock := mock_utils.NewMockITimeService(mockCtrl)
 	tNow := utils.NewTimeService().GetUTCTimeNow()
-	tServiceMock.EXPECT().GetUTCTimeNow().Return(tNow).AnyTimes()
-	defer mockCtrl.Finish()
 
-	identityRepo := postgres{
+	identityRepo := identity{
 		db: db.Conn,
 	}
 
@@ -63,6 +57,31 @@ func TestIdentityRepo(t *testing.T) {
 		CreatedAt:  createAt.Local(),
 		UpdatedAt:  updateAt.Local(),
 	}
+
+	t.Run("Create with nil addr", func(t *testing.T) {
+		id, err := uuid.NewV4()
+		require.NoError(t, err, err)
+
+		expected := orm.Identity{
+			ID:         id,
+			Username:   "Kevin",
+			PassHash:   "Chen",
+			EthAddress: nil,
+			Country:    "US",
+			State:      orm.StatePending,
+			CreatedAt:  tNow.Local(),
+			UpdatedAt:  tNow.Local(),
+		}
+
+		created, err := identityRepo.Create(ctx, expected)
+		require.NoError(t, err, err)
+
+		assert.EqualValues(t, expected, created, "identities have diff")
+
+		actual, err := identityRepo.GetByUserName(ctx, expected.Username)
+		require.NoError(t, err, err)
+		assert.EqualValues(t, created, actual, "identities have diff")
+	})
 
 	t.Run("Create New", func(t *testing.T) {
 		id, err := uuid.NewV4()

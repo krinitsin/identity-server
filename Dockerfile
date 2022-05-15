@@ -15,6 +15,5 @@ COPY . /release/app
 
 WORKDIR /release/app
 RUN make build
-RUN ls -la ./bin
 
 CMD /release/app/bin/identity

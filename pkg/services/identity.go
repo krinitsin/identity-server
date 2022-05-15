@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 
 	"identityserver/pkg/models/orm"
-	identity2 "identityserver/pkg/repos/identity"
+	"identityserver/pkg/repos"
 	"identityserver/pkg/utils"
 	"identityserver/pkg/utils/helpers"
 	"strings"
@@ -26,11 +26,11 @@ type Identity interface {
 
 type identity struct {
 	db          *gorm.DB
-	repo        identity2.Identity
+	repo        repos.Identity
 	timeService utils.ITimeService
 }
 
-func NewIdentity(db *gorm.DB, repo identity2.Identity, timeService utils.ITimeService) Identity {
+func NewIdentity(db *gorm.DB, repo repos.Identity, timeService utils.ITimeService) Identity {
 	return identity{
 		db:          db,
 		repo:        repo,
@@ -76,7 +76,7 @@ func (i identity) SetPublicInfo(ctx context.Context, username, ethAddress, count
 	tx := i.db.Begin()
 	defer func() { err = helpers.FinalizeTx(tx, err) }()
 
-	txRepo := identity2.NewIdentityRepo(tx)
+	txRepo := repos.NewIdentityRepo(tx)
 
 	// check of eth-address already in use
 	identity, err := txRepo.GetByEthAddress(ctx, bAddr)

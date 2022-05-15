@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"identityserver/pkg/models/rest"
-	"identityserver/pkg/repos/identity"
+	"identityserver/pkg/repos"
 )
 
 var errForbidden = errors.New("access denied")
@@ -20,12 +20,12 @@ type Basic interface {
 }
 
 type basic struct {
-	repo   identity.Identity
+	repo   repos.Identity
 	logger *zap.Logger
 }
 
 func NewBasicAuthInterceptor(
-	repo identity.Identity,
+	repo repos.Identity,
 	logger *zap.Logger) Basic {
 	return basic{repo: repo, logger: logger}
 }

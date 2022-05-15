@@ -16,7 +16,7 @@ build:
 
 # db should be already up before starting server
 run: build
-	./bin/identity --port 8081 --db.username="identity" --db.password="identitypass" --db.dbname="identity"  --db.host="0.0.0.0" --db.port=5432
+	./bin/identity --port 8080 --db.username="identity" --db.password="identitypass" --db.dbname="identity"  --db.host="0.0.0.0" --db.port=5432
 
 test: gotest gofmt govet
 

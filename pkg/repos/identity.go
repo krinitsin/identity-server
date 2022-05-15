@@ -1,21 +1,30 @@
-package identity
+package repos
 
 import (
 	"context"
-	"identityserver/pkg/models/orm"
-
+	"errors"
 	"gorm.io/gorm"
+	"identityserver/pkg/models/orm"
 )
 
-type postgres struct {
+type Identity interface {
+	Create(ctx context.Context, identity orm.Identity) (orm.Identity, error)
+	GetByUserName(ctx context.Context, username string) (orm.Identity, error)
+	GetByEthAddress(ctx context.Context, ethAddress []byte) (orm.Identity, error)
+	Update(ctx context.Context, identity orm.Identity) (orm.Identity, error)
+}
+
+var ErrAlreadyExist = errors.New("identity already exist for given username")
+
+type identity struct {
 	db *gorm.DB
 }
 
 func NewIdentityRepo(db *gorm.DB) Identity {
-	return postgres{db: db}
+	return identity{db: db}
 }
 
-func (p postgres) Create(ctx context.Context, identity orm.Identity) (orm.Identity, error) {
+func (p identity) Create(ctx context.Context, identity orm.Identity) (orm.Identity, error) {
 	if err := identity.Validate(); err != nil {
 		return orm.Identity{}, err
 	}
@@ -36,7 +45,7 @@ func (p postgres) Create(ctx context.Context, identity orm.Identity) (orm.Identi
 	return identity, nil
 }
 
-func (p postgres) GetByUserName(ctx context.Context, username string) (orm.Identity, error) {
+func (p identity) GetByUserName(ctx context.Context, username string) (orm.Identity, error) {
 	var identity orm.Identity
 
 	results := p.db.WithContext(ctx).
@@ -46,7 +55,7 @@ func (p postgres) GetByUserName(ctx context.Context, username string) (orm.Ident
 	return identity, results.Error
 }
 
-func (p postgres) GetByEthAddress(ctx context.Context, ethAddress []byte) (orm.Identity, error) {
+func (p identity) GetByEthAddress(ctx context.Context, ethAddress []byte) (orm.Identity, error) {
 	var identity orm.Identity
 
 	results := p.db.WithContext(ctx).
@@ -56,9 +65,7 @@ func (p postgres) GetByEthAddress(ctx context.Context, ethAddress []byte) (orm.I
 	return identity, results.Error
 }
 
-func (p postgres) Update(ctx context.Context, identity orm.Identity) (orm.Identity, error) {
-	//identity.UpdatedAt = p.timeService.GetUTCTimeNow()
-
+func (p identity) Update(ctx context.Context, identity orm.Identity) (orm.Identity, error) {
 	result := p.db.WithContext(ctx).
 		Select("eth_address", "country", "state", "updated_at").
 		Where(orm.Identity{Username: identity.Username}).
